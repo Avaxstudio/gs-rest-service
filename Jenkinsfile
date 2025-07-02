@@ -6,7 +6,7 @@ pipeline {
         APP_CONTAINER = 'test-app'
         HOST_PORT = '777'
         CONTAINER_PORT = '8080'
-        SLACK_WEBHOOK = credentials('https://hooks.slack.com/services/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')
+        SLACK_WEBHOOK = credentials('slack-webhook-url')
     }
 
     stages {
