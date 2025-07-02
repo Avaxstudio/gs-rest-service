@@ -1,64 +1,77 @@
 pipeline {
     agent any
 
+    options {
+        // Briše workspace pre svakog builda
+        skipDefaultCheckout(true)
+    }
+
     environment {
         APP_IMAGE = 'gs-rest-service'
-        APP_PORT = '777'
         APP_CONTAINER = 'test-app'
+        HOST_PORT = '777'
+        CONTAINER_PORT = '8080'
+        ENDPOINT = "http://localhost:${HOST_PORT}/greeting"
     }
 
     stages {
+        stage('Clean Workspace & Checkout') {
+            steps {
+                deleteDir()
+                checkout scm
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
-                echo '🔧 Građenje Docker slike...'
+                echo 'Building Docker image...'
                 sh "docker build -t ${APP_IMAGE} ."
             }
         }
 
-        stage('Run Container') {
+        stage('Run Application') {
             steps {
-                echo '🚀 Pokretanje aplikacije...'
-                sh "docker run -d -p ${APP_PORT}:8080 --name ${APP_CONTAINER} ${APP_IMAGE}"
+                echo 'Running container...'
+                sh "docker run -d -p ${HOST_PORT}:${CONTAINER_PORT} --name ${APP_CONTAINER} ${APP_IMAGE}"
             }
         }
 
         stage('Wait for App to Respond') {
-    steps {
-        sh '''
-            echo "⏳ Čekam da se aplikacija pokrene..."
-
-            for i in {1..12}; do
-              if curl -fs http://localhost:777/greeting > /dev/null; then
-                echo "✅ Endpoint je spreman!"
-                break
-              fi
-              echo "❌ Endpoint nije spreman... pokušaj $i"
-              sleep 2
-            done
-        '''
-    }
-}
-
+            steps {
+                echo 'Waiting for application to become available...'
+                sh '''
+                    for i in {1..12}; do
+                      if curl -fs http://localhost:777/greeting > /dev/null; then
+                        echo "Application is responding."
+                        exit 0
+                      fi
+                      echo "Attempt $i: not ready yet."
+                      sleep 2
+                    done
+                    echo "Application failed to respond in time."
+                    exit 1
+                '''
+            }
         }
 
-        stage('Test Greeting Endpoint') {
+        stage('Test Endpoint') {
             steps {
-                echo '📡 Testiram endpoint...'
-                sh "curl -f http://localhost:777/greeting"
+                echo 'Testing application endpoint...'
+                sh 'curl -f $ENDPOINT'
             }
         }
     }
 
     post {
         always {
-            echo '🧹 Čistim kontejner...'
+            echo 'Cleaning up container...'
             sh "docker rm -f ${APP_CONTAINER} || true"
         }
         success {
-            echo '✅ Build uspešan!'
+            echo 'Build completed successfully.'
         }
         failure {
-            echo '❌ Build neuspešan. Proveri logove.'
+            echo 'Build failed. Check logs for details.'
         }
     }
 }
