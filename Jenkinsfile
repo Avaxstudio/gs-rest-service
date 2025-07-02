@@ -10,6 +10,16 @@ pipeline {
 
     }
 
+    stage('Env Bootstrap') {
+    steps {
+        script {
+            echo "Container: ${APP_CONTAINER}"
+            echo "Webhook is set: ${SLACK_WEBHOOK != null}"
+        }
+    }
+}
+
+
     stages {
         stage('Notify Start') {
             steps {
