@@ -32,40 +32,6 @@ pipeline {
             }
         }
 
-        stage('Notify Test Complete') {
-            steps {
-                sh """
-                    curl -X POST -H 'Content-type: application/json' \\
-                    --data '{"text": ":microscope: Tests completed for *${env.JOB_NAME}* (#${env.BUILD_NUMBER})"}' \\
-                    "${env.SLACK_WEBHOOK}"
-                """
-            }
-        }
-
-        stage('Notify Test Results') {
-            steps {
-                script {
-                    def testLog = sh(
-                        script: "cd complete && mvn -B test | tee mvn-test.log",
-                        returnStdout: true
-                    ).trim()
-
-                    def summary = sh(
-                        script: "cd complete && grep -E 'Tests run:|Failures:|Errors:|Skipped:' mvn-test.log || echo 'No test summary found'",
-                        returnStdout: true
-                    ).trim()
-
-                    def escaped = summary.replace('\"', '\\\"').replace('\n', '\\n')
-
-                    sh """
-                        curl -X POST -H 'Content-type: application/json' \\
-                        --data '{"text": ":bar_chart: *Test run for* ${env.JOB_NAME} (#${env.BUILD_NUMBER}):\\n${escaped}"}' \\
-                        "${env.SLACK_WEBHOOK}"
-                    """
-                }
-            }
-        }
-
         stage('Run Application') {
             steps {
                 sh "docker run -d -p ${HOST_PORT}:${CONTAINER_PORT} --name ${APP_CONTAINER} ${APP_IMAGE}"
