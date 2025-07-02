@@ -6,29 +6,9 @@ pipeline {
         APP_CONTAINER = 'test-app'
         HOST_PORT = '777'
         CONTAINER_PORT = '8080'
-        SLACK_WEBHOOK = credentials('gs-rest-slack-hook-v2')
-
     }
-    
-    stages {
-        stage('Env Bootstrap') {
-            steps {
-                script {
-                    echo "Container name: ${APP_CONTAINER}"
-                    echo "Slack webhook set: ${SLACK_WEBHOOK != null}"
-                }
-            }
-        }
-        stage('Notify Start') {
-            steps {
-                sh """
-                    curl -X POST -H 'Content-type: application/json' \
-                    --data '{"text": ":rocket: *Build started* for gs-rest-service"}' \
-                    "$SLACK_WEBHOOK"
-                """
-            }
-        }
 
+    stages {
         stage('Checkout') {
             steps {
                 checkout scm
@@ -46,35 +26,11 @@ pipeline {
                 sh "docker run -d -p ${HOST_PORT}:${CONTAINER_PORT} --name ${APP_CONTAINER} ${APP_IMAGE}"
             }
         }
-
-        stage('Notify Success') {
-            when {
-                expression { currentBuild.currentResult == 'SUCCESS' }
-            }
-            steps {
-                sh """
-                    curl -X POST -H 'Content-type: application/json' \
-                    --data '{"text": ":white_check_mark: *Build succeeded* for gs-rest-service"}' \
-                    "$SLACK_WEBHOOK"
-                """
-            }
-        }
     }
 
     post {
-        failure {
-            script {
-                sh """
-                    curl -X POST -H 'Content-type: application/json' \
-                    --data '{"text": ":x: *Build failed* for gs-rest-service"}' \
-                    "$SLACK_WEBHOOK"
-                """
-            }
-        }
         always {
-            script {
-                sh "docker rm -f ${APP_CONTAINER} || true"
-            }
+            sh "docker rm -f ${APP_CONTAINER} || true"
         }
     }
 }
