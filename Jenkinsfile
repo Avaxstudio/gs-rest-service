@@ -1,17 +1,16 @@
 pipeline {
     agent any
 
-    options {
-        // Briše workspace pre svakog builda
-        skipDefaultCheckout(true)
-    }
-
     environment {
         APP_IMAGE = 'gs-rest-service'
         APP_CONTAINER = 'test-app'
         HOST_PORT = '777'
         CONTAINER_PORT = '8080'
         ENDPOINT = "http://localhost:${HOST_PORT}/greeting"
+    }
+
+    options {
+        skipDefaultCheckout(true)
     }
 
     stages {
@@ -31,6 +30,9 @@ pipeline {
 
         stage('Run Application') {
             steps {
+                echo 'Removing previous container if it exists...'
+                sh "docker rm -f ${APP_CONTAINER} || true"
+
                 echo 'Running container...'
                 sh "docker run -d -p ${HOST_PORT}:${CONTAINER_PORT} --name ${APP_CONTAINER} ${APP_IMAGE}"
             }
