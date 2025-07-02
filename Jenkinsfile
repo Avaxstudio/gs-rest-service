@@ -10,16 +10,15 @@ pipeline {
     }
 
     stages {
-
         stage('Notify Start') {
-    steps {
-        sh """
-            curl -X POST -H 'Content-type: application/json' \\
-            --data '{"text": ":rocket: Build started for *${env.JOB_NAME}* (#${env.BUILD_NUMBER})"}' \\
-            "${env.SLACK_WEBHOOK}"
-        """
-    }
-}
+            steps {
+                sh """
+                    curl -X POST -H 'Content-type: application/json' \\
+                    --data '{"text": ":rocket: Build started for *${env.JOB_NAME}* (#${env.BUILD_NUMBER})"}' \\
+                    "${env.SLACK_WEBHOOK}"
+                """
+            }
+        }
 
         stage('Checkout') {
             steps {
@@ -44,18 +43,20 @@ pipeline {
         always {
             sh "docker rm -f ${APP_CONTAINER} || true"
         }
+
         success {
-        sh """
-            curl -X POST -H 'Content-type: application/json' \\
-            --data '{"text": ":white_check_mark: Build succeeded for *${env.JOB_NAME}* (#${env.BUILD_NUMBER})"}' \\
-            "${env.SLACK_WEBHOOK}"
-        """
-    }
-    failure {
-        sh """
-            curl -X POST -H 'Content-type: application/json' \\
-            --data '{"text": ":x: Build FAILED for *${env.JOB_NAME}* (#${env.BUILD_NUMBER})"}' \\
-            "${env.SLACK_WEBHOOK}"
-        """
+            sh """
+                curl -X POST -H 'Content-type: application/json' \\
+                --data '{"text": ":white_check_mark: Build succeeded for *${env.JOB_NAME}* (#${env.BUILD_NUMBER})"}' \\
+                "${env.SLACK_WEBHOOK}"
+            """
+        }
+        failure {
+            sh """
+                curl -X POST -H 'Content-type: application/json' \\
+                --data '{"text": ":x: Build FAILED for *${env.JOB_NAME}* (#${env.BUILD_NUMBER})"}' \\
+                "${env.SLACK_WEBHOOK}"
+            """
+        }
     }
 }
