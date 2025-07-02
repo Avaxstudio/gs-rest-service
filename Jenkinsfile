@@ -22,20 +22,23 @@ pipeline {
             }
         }
 
-        stage('Wait for App to Start') {
-            steps {
-                echo '⏳ Čekam da se aplikacija podigne...'
-                sh '''
-                    for i in {1..10}; do
-                      if curl -fs http://localhost:777/greeting > /dev/null; then
-                        echo "✅ Aplikacija je dostupna!"
-                        break
-                      fi
-                      echo "🔁 Još nije spremna... pokušaj $i"
-                      sleep 2
-                    done
-                '''
-            }
+        stage('Wait for App to Respond') {
+    steps {
+        sh '''
+            echo "⏳ Čekam da se aplikacija pokrene..."
+
+            for i in {1..12}; do
+              if curl -fs http://localhost:777/greeting > /dev/null; then
+                echo "✅ Endpoint je spreman!"
+                break
+              fi
+              echo "❌ Endpoint nije spreman... pokušaj $i"
+              sleep 2
+            done
+        '''
+    }
+}
+
         }
 
         stage('Test Greeting Endpoint') {
