@@ -38,24 +38,30 @@ pipeline {
             }
         }
 
-       stage('Wait for App to Respond') {
-    steps {
-        echo 'Waiting for application to become available...'
-        sh '''
-            for i in $(seq 1 12); do
-              if curl -fs http://localhost:777/greeting > /dev/null; then
-                echo "Application is responding."
-                exit 0
-              fi
-              echo "Attempt $i: not ready yet."
-              sleep 2
-            done
-            echo "Application failed to respond in time."
-            exit 1
-        '''
-    }
-}
+        stage('Inspect Container Logs') {
+            steps {
+                echo 'Inspecting logs from Docker container...'
+                sh "sleep 1 && docker logs ${APP_CONTAINER} || true"
+            }
+        }
 
+        stage('Wait for App to Respond') {
+            steps {
+                echo 'Waiting for application to become available...'
+                sh '''
+                    for i in $(seq 1 12); do
+                      if curl -fs http://localhost:777/greeting > /dev/null; then
+                        echo "Application is responding."
+                        exit 0
+                      fi
+                      echo "Attempt $i: not ready yet."
+                      sleep 2
+                    done
+                    echo "Application failed to respond in time."
+                    exit 1
+                '''
+            }
+        }
 
         stage('Test Endpoint') {
             steps {
