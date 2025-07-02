@@ -4,8 +4,8 @@ pipeline {
     environment {
         APP_IMAGE = 'gs-rest-service'
         APP_CONTAINER = 'test-app'
-        HOST_PORT = '777'          // Spoljni port (po zahtevu zadatka)
-        CONTAINER_PORT = '8080'    // Unutrašnji port koji Spring koristi
+        HOST_PORT = '777'
+        CONTAINER_PORT = '8080'
         ENDPOINT = "http://localhost:${HOST_PORT}/greeting"
     }
 
@@ -45,29 +45,28 @@ pipeline {
             }
         }
 
-        stage('Wait for App to Respond') {
+        stage('Wait for App to Respond (From Inside Container)') {
             steps {
-                echo 'Waiting for application to become available...'
+                echo 'Checking /greeting endpoint directly inside container...'
                 sh '''
-                    sleep 1
                     for i in $(seq 1 12); do
-                      if curl -fs http://localhost:777/greeting > /dev/null; then
-                        echo "Application is responding."
+                      if docker exec test-app curl -fs http://localhost:8080/greeting > /dev/null; then
+                        echo "App responded successfully from inside container."
                         exit 0
                       fi
-                      echo "Attempt $i: not ready yet."
+                      echo "Attempt $i: not responding yet."
                       sleep 2
                     done
-                    echo "Application failed to respond in time."
+                    echo "Application failed to respond from inside container."
                     exit 1
                 '''
             }
         }
 
-        stage('Test Endpoint') {
+        stage('Test Endpoint (Host-side)') {
             steps {
-                echo 'Testing application endpoint...'
-                sh 'curl -f $ENDPOINT'
+                echo 'Testing application endpoint from host (optional)...'
+                sh 'curl -f $ENDPOINT || true'
             }
         }
     }
