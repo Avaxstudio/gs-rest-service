@@ -45,19 +45,21 @@ pipeline {
         stage('Notify Test Results') {
             steps {
                 script {
-                    def summary = sh (
-                        script: '''
-                            PASSED=$(grep -oP 'testsuite tests="\\K\\d+' target/surefire-reports/*.xml | paste -sd+ - | bc)
-                            FAILED=$(grep -oP 'failures="\\K\\d+' target/surefire-reports/*.xml | paste -sd+ - | bc)
-                            TIME=$(grep -oP 'time="\\K[\\d.]+' target/surefire-reports/*.xml | paste -sd+ - | bc)
-                            echo "✅ Passed: $PASSED | ❌ Failed: $FAILED | ⏱ Duration: ${TIME}s"
-                        ''',
+                    def testSummary = sh(
+                        script: "mvn -B surefire-report:report-only | tee test_output.txt",
                         returnStdout: true
                     ).trim()
 
+                    def filtered = sh(
+                        script: "tail -n 30 test_output.txt | grep -E 'Tests run:|Failures:|Errors:|Skipped:' || echo 'No test summary found'",
+                        returnStdout: true
+                    ).trim()
+
+                    def escaped = filtered.replace('"', '\\"').replace('\n', '\\n')
+
                     sh """
                         curl -X POST -H 'Content-type: application/json' \\
-                        --data '{"text": ":bar_chart: *Test results for* ${env.JOB_NAME} (#${env.BUILD_NUMBER}): ${summary}"}' \\
+                        --data '{"text": ":bar_chart: *Test summary for* ${env.JOB_NAME} (#${env.BUILD_NUMBER}):\\n${escaped}"}' \\
                         "${env.SLACK_WEBHOOK}"
                     """
                 }
