@@ -54,14 +54,18 @@ pipeline {
 
     post {
         failure {
-            sh """
-                curl -X POST -H 'Content-type: application/json' \
-                --data '{"text": ":x: *Build failed* for gs-rest-service"}' \
-                "$SLACK_WEBHOOK"
-            """
+            script {
+                sh """
+                    curl -X POST -H 'Content-type: application/json' \
+                    --data '{"text": ":x: *Build failed* for gs-rest-service"}' \
+                    "$SLACK_WEBHOOK"
+                """
+            }
         }
         always {
-            sh "docker rm -f ${APP_CONTAINER} || true"
+            script {
+                sh "docker rm -f ${APP_CONTAINER} || true"
+            }
         }
     }
 }
