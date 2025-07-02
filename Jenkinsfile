@@ -4,8 +4,8 @@ pipeline {
     environment {
         APP_IMAGE = 'gs-rest-service'
         APP_CONTAINER = 'test-app'
-        HOST_PORT = '777'
-        CONTAINER_PORT = '8080'
+        HOST_PORT = '777'          // Spoljni port (po zahtevu zadatka)
+        CONTAINER_PORT = '8080'    // Unutrašnji port koji Spring koristi
         ENDPOINT = "http://localhost:${HOST_PORT}/greeting"
     }
 
@@ -49,6 +49,7 @@ pipeline {
             steps {
                 echo 'Waiting for application to become available...'
                 sh '''
+                    sleep 1
                     for i in $(seq 1 12); do
                       if curl -fs http://localhost:777/greeting > /dev/null; then
                         echo "Application is responding."
