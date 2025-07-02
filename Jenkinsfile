@@ -26,36 +26,43 @@ pipeline {
             }
         }
 
-        stage('Run Tests') {
+        stage('Build Docker Image') {
             steps {
-                dir('complete') {
-                    sh 'mvn -B test | tee mvn-test.log'
-                }
+                sh "docker build -t ${APP_IMAGE} ."
+            }
+        }
+
+        stage('Notify Test Complete') {
+            steps {
+                sh """
+                    curl -X POST -H 'Content-type: application/json' \\
+                    --data '{"text": ":microscope: Tests completed for *${env.JOB_NAME}* (#${env.BUILD_NUMBER})"}' \\
+                    "${env.SLACK_WEBHOOK}"
+                """
             }
         }
 
         stage('Notify Test Results') {
             steps {
                 script {
-                    def summary = sh(
-                        script: "cd complete && grep -E 'Tests run:|Failures:|Errors:|Skipped:' mvn-test.log || echo 'No test summary found'",
+                    def testSummary = sh(
+                        script: "mvn -B surefire-report:report-only | tee test_output.txt",
                         returnStdout: true
                     ).trim()
 
-                    def escaped = summary.replace('\"', '\\\"').replace('\n', '\\n')
+                    def filtered = sh(
+                        script: "tail -n 30 test_output.txt | grep -E 'Tests run:|Failures:|Errors:|Skipped:' || echo 'No test summary found'",
+                        returnStdout: true
+                    ).trim()
+
+                    def escaped = filtered.replace('"', '\\"').replace('\n', '\\n')
 
                     sh """
                         curl -X POST -H 'Content-type: application/json' \\
-                        --data '{"text": ":bar_chart: *Test results for* ${env.JOB_NAME} (#${env.BUILD_NUMBER}):\\n${escaped}"}' \\
+                        --data '{"text": ":bar_chart: *Test summary for* ${env.JOB_NAME} (#${env.BUILD_NUMBER}):\\n${escaped}"}' \\
                         "${env.SLACK_WEBHOOK}"
                     """
                 }
-            }
-        }
-
-        stage('Build Docker Image') {
-            steps {
-                sh "docker build -t ${APP_IMAGE} ."
             }
         }
 
