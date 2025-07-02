@@ -26,6 +26,33 @@ pipeline {
             }
         }
 
+        stage('Run Tests') {
+            steps {
+                dir('complete') {
+                    sh 'mvn -B test | tee mvn-test.log'
+                }
+            }
+        }
+
+        stage('Notify Test Results') {
+            steps {
+                script {
+                    def summary = sh(
+                        script: "cd complete && grep -E 'Tests run:|Failures:|Errors:|Skipped:' mvn-test.log || echo 'No test summary found'",
+                        returnStdout: true
+                    ).trim()
+
+                    def escaped = summary.replace('\"', '\\\"').replace('\n', '\\n')
+
+                    sh """
+                        curl -X POST -H 'Content-type: application/json' \\
+                        --data '{"text": ":bar_chart: *Test results for* ${env.JOB_NAME} (#${env.BUILD_NUMBER}):\\n${escaped}"}' \\
+                        "${env.SLACK_WEBHOOK}"
+                    """
+                }
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 sh "docker build -t ${APP_IMAGE} ."
