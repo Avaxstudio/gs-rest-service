@@ -9,18 +9,16 @@ pipeline {
         SLACK_WEBHOOK = credentials('gs-rest-slack-hook-v2')
 
     }
-
-    stage('Env Bootstrap') {
-    steps {
-        script {
-            echo "Container: ${APP_CONTAINER}"
-            echo "Webhook is set: ${SLACK_WEBHOOK != null}"
-        }
-    }
-}
-
-
+    
     stages {
+        stage('Env Bootstrap') {
+            steps {
+                script {
+                    echo "Container name: ${APP_CONTAINER}"
+                    echo "Slack webhook set: ${SLACK_WEBHOOK != null}"
+                }
+            }
+        }
         stage('Notify Start') {
             steps {
                 sh """
