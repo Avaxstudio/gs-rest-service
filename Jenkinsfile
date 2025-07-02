@@ -42,6 +42,28 @@ pipeline {
             }
         }
 
+        stage('Notify Test Results') {
+            steps {
+                script {
+                    def summary = sh (
+                        script: '''
+                            PASSED=$(grep -oP 'testsuite tests="\\K\\d+' target/surefire-reports/*.xml | paste -sd+ - | bc)
+                            FAILED=$(grep -oP 'failures="\\K\\d+' target/surefire-reports/*.xml | paste -sd+ - | bc)
+                            TIME=$(grep -oP 'time="\\K[\\d.]+' target/surefire-reports/*.xml | paste -sd+ - | bc)
+                            echo "✅ Passed: $PASSED | ❌ Failed: $FAILED | ⏱ Duration: ${TIME}s"
+                        ''',
+                        returnStdout: true
+                    ).trim()
+
+                    sh """
+                        curl -X POST -H 'Content-type: application/json' \\
+                        --data '{"text": ":bar_chart: *Test results for* ${env.JOB_NAME} (#${env.BUILD_NUMBER}): ${summary}"}' \\
+                        "${env.SLACK_WEBHOOK}"
+                    """
+                }
+            }
+        }
+
         stage('Run Application') {
             steps {
                 sh "docker run -d -p ${HOST_PORT}:${CONTAINER_PORT} --name ${APP_CONTAINER} ${APP_IMAGE}"
