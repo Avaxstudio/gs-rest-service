@@ -32,6 +32,16 @@ pipeline {
             }
         }
 
+        stage('Notify Test Complete') {
+            steps {
+                sh """
+                    curl -X POST -H 'Content-type: application/json' \\
+                    --data '{"text": ":microscope: Tests completed for *${env.JOB_NAME}* (#${env.BUILD_NUMBER})"}' \\
+                    "${env.SLACK_WEBHOOK}"
+                """
+            }
+        }
+
         stage('Run Application') {
             steps {
                 sh "docker run -d -p ${HOST_PORT}:${CONTAINER_PORT} --name ${APP_CONTAINER} ${APP_IMAGE}"
