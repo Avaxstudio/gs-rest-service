@@ -4,6 +4,8 @@ URL="https://gs-rest-service-qb95.onrender.com/greeting"
 LOGFILE="service_monitor.log"
 STATUS="UNKNOWN"
 CHECK_INTERVAL=10
+SLACK_WEBHOOK=$(grep SLACK_WEBHOOK .env | cut -d '=' -f2-)
+
 
 send_slack_notification() {
     local status="$1"
@@ -23,8 +25,9 @@ send_slack_notification() {
     message="$emoji *Status:* $status\n*Time:* $timestamp\n*HTTP Code:* $http_code"
 
     curl -X POST -H 'Content-type: application/json' \
-         --data "{\"text\": \"$message\"}" \
-         https://hooks.slack.com/services/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
+     --data "{\"text\": \"$message\"}" \
+     "$SLACK_WEBHOOK"
+
 }
 
 
