@@ -28,7 +28,7 @@ send_slack_notification() {
 
     curl -X POST -H 'Content-type: application/json' \
      --data "{\"text\": \"$message\"}" \
-     "$SLACK_WEBHOOK"
+     "$SLACK_WEBHOOK_MONITOR"
 
 }
 
