@@ -1,11 +1,10 @@
-# Stage 1: Build
 FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /app/complete
-COPY complete/ /app/complete
+COPY complete/pom.xml .
+RUN mvn dependency:go-offline -B
+COPY complete/ .
 RUN mvn clean package -DskipTests
 
-
-# Stage 2: Minimalni runtime
 FROM gcr.io/distroless/java17-debian11
 WORKDIR /app/complete
 COPY --from=build /app/complete/target/*.jar app.jar
