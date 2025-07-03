@@ -4,7 +4,9 @@ URL="https://gs-rest-service-qb95.onrender.com/greeting"
 LOGFILE="service_monitor.log"
 STATUS="UNKNOWN"
 CHECK_INTERVAL=10
-SLACK_WEBHOOK=$(grep SLACK_WEBHOOK .env | cut -d '=' -f2-)
+source .env
+
+
 
 
 send_slack_notification() {
