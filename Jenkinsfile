@@ -7,6 +7,7 @@ pipeline {
         HOST_PORT = '777'
         CONTAINER_PORT = '8080'
         SLACK_WEBHOOK = credentials('gs-rest-slack-hook')
+        SLACK_WEBHOOK_MONITOR = credentials('gs-rest-monitor-hook')
     }
 
     stages {
