@@ -8,6 +8,7 @@ RUN mvn clean package -DskipTests
 FROM gcr.io/distroless/java17-debian11
 WORKDIR /app/complete
 COPY --from=build /app/complete/target/*.jar app.jar
-EXPOSE 777
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENV PORT=10000
+EXPOSE $PORT
+ENTRYPOINT ["java", "-Dserver.port=${PORT}", "-jar", "app.jar"]
 
